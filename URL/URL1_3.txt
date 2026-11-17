@@ -1,2 +1,2 @@
-Teachable Machine
-https://drluarn.github.io/
+Teachable Machine — 3-class image classifier
+https://teachablemachine.withgoogle.com/train
