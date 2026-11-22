@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M335692 · Pforzheim AI Course Islands</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; font-family:"Segoe UI",system-ui,sans-serif; background:#0a2a4a; }
+  #sea { position:fixed; inset:0; display:block; }
+  #title { position:fixed; top:16px; left:0; right:0; text-align:center; z-index:4; pointer-events:none;
+    font-size:clamp(20px,3.6vw,40px); font-weight:800; letter-spacing:3px; color:#fff; text-shadow:0 2px 18px rgba(0,0,0,.5); }
+  #title small { display:block; font-size:13px; font-weight:600; letter-spacing:2px; color:#bfe4ff; margin-top:4px; }
+  #hintbar { position:fixed; bottom:14px; left:0; right:0; text-align:center; z-index:4; color:#cde8ff; font-size:12.5px; pointer-events:none; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+  #panel { position:fixed; top:0; right:-440px; width:420px; max-width:92vw; height:100%; z-index:6;
+    background:rgba(8,20,36,.94); backdrop-filter:blur(8px); box-shadow:-10px 0 40px rgba(0,0,0,.5);
+    transition:right .35s cubic-bezier(.2,.8,.2,1); padding:32px 28px; overflow-y:auto; }
+  #panel.open { right:0; }
+  #panel .u { font-size:13px; letter-spacing:3px; font-weight:700; opacity:.85; }
+  #panel h2 { font-size:28px; margin:6px 0 4px; }
+  #panel .tag { display:inline-block; font-size:11px; padding:3px 10px; border-radius:20px; margin-bottom:16px; font-weight:700; }
+  #panel h3 { font-size:13px; letter-spacing:1px; color:#8fd; margin:18px 0 6px; text-transform:uppercase; }
+  #panel ul { list-style:none; } #panel li { font-size:14px; padding:6px 0 6px 20px; position:relative; color:#dce8ff; line-height:1.4; border-bottom:1px solid rgba(255,255,255,.06); }
+  #panel li:before { content:"◆"; position:absolute; left:0; color:#4ad; font-size:10px; top:9px; }
+  #panel .built li:before { content:"✓"; color:#5e9; }
+  #closeBtn { position:absolute; top:16px; right:18px; background:none; border:none; color:#9bd; font-size:26px; cursor:pointer; }
+  #progress { position:fixed; top:14px; left:16px; z-index:4; color:#cde8ff; font-size:12px; background:rgba(0,0,0,.25); padding:6px 12px; border-radius:20px; }
+</style>
+</head>
+<body>
+  <canvas id="sea"></canvas>
+  <div id="title">Pforzheim AI Course Islands<small>M335692 · The New Frontiers of AI — From Perception to Agentic Intelligence</small></div>
+  <div id="progress">🧭 Click an island to explore</div>
+  <div id="hintbar">6 islands · one per course unit — hover to lift, click to open the log of what was learned &amp; built</div>
+  <div id="panel">
+    <button id="closeBtn">×</button>
+    <div class="u" id="pU"></div><h2 id="pName"></h2><span class="tag" id="pTag"></span>
+    <h3>Topics</h3><ul id="pTopics"></ul><h3>Built</h3><ul class="built" id="pBuilt"></ul>
+  </div>
+<script>
+const cv=document.getElementById("sea"), ctx=cv.getContext("2d");
+let W,H,DPR; function resize(){ DPR=Math.min(2,devicePixelRatio||1); W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR; cv.style.width=innerWidth+"px"; cv.style.height=innerHeight+"px"; layout(); }
+addEventListener("resize",resize);
+const ISLES=[
+  { u:"UNIT 1", name:"Perception Bay", c:"#58c7ff", nx:0.20, ny:0.34, r:0.11, icon:"flag",
+    topics:["Introduction to AI & how machines perceive","Set up your GitHub Pages personal site","MediaPipe Tasks, Teachable Machine basics","Object & video recognition"],
+    built:["Personal website (github.io)","unit1_1 … unit1_5 proof shots"] },
+  { u:"UNIT 2", name:"Vision Isle", c:"#5effa8", nx:0.44, ny:0.24, r:0.12, icon:"eye",
+    topics:["MediaPipe Solutions in the browser","Face mesh (468 pts), pose, gestures","Image segmentation, face detection"],
+    built:["6 live webcam demos","Spider Kaka — full-body pose puppet (extra credit)"] },
+  { u:"UNIT 3", name:"Builder's Cove", c:"#ffd24a", nx:0.70, ny:0.33, r:0.13, icon:"hammer",
+    topics:["Developing apps with AI assistants","Teachable Machine classifier","YOLO26 detection · Neural Style Transfer","Gemini chat app · this Island"],
+    built:["yolo.html · yolo_cctv.html (count+heatmap+speed)","Style Transfer (5 ONNX styles)","Gemini chat app · Course Island"] },
+  { u:"UNIT 4", name:"Local LLM Lagoon", c:"#9d7bff", nx:0.30, ny:0.62, r:0.115, icon:"chip",
+    topics:["Run models locally with Ollama","gemma3:4b multimodal model","Gemini via API"],
+    built:["Ollama + gemma3:4b installed & verified"] },
+  { u:"UNIT 5", name:"Agent Archipelago", c:"#ff7ab0", nx:0.55, ny:0.72, r:0.12, icon:"bot",
+    topics:["Agentic AI: Skills, Plugins, Sites","Cowork & Marketing workflows","OpenClaw sandbox · Hermes agent"],
+    built:["(in progress — same-lines HTML builds)"] },
+  { u:"UNIT 6", name:"Frontier Reef", c:"#ff9a4a", nx:0.80, ny:0.64, r:0.11, icon:"star",
+    topics:["Latest frontier tools","Meta Muse · Manus · Hark Pro","OpenAI Dots · Grok Bot · Claude Duet"],
+    built:["(upcoming)"] },
+];
+function layout(){ for(const is of ISLES){ is.x=is.nx*W; is.y=is.ny*H; is.rad=is.r*Math.min(W,H); } }
+const clouds=Array.from({length:7},()=>({x:Math.random(),y:Math.random()*0.5,s:0.4+Math.random()*0.8,v:0.01+Math.random()*0.02}));
+let t=0, hover=null;
+function waterBg(){ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,"#0d4e86"); g.addColorStop(0.5,"#0a6ba8"); g.addColorStop(1,"#073a63");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H); ctx.strokeStyle="rgba(255,255,255,0.06)"; ctx.lineWidth=2*DPR;
+  for(let r=0;r<22;r++){ ctx.beginPath(); const y=(r/22)*H; for(let x=0;x<=W;x+=20*DPR){ const yy=y+Math.sin(x*0.01+t*0.6+r)*6*DPR; x===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy);} ctx.stroke(); } }
+function sun(){ const sx=W*0.9, sy=H*0.14, R=42*DPR; const g=ctx.createRadialGradient(sx,sy,4,sx,sy,R*2.4); g.addColorStop(0,"rgba(255,240,180,.9)"); g.addColorStop(1,"rgba(255,240,180,0)");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,R*2.4,0,7); ctx.fill(); ctx.fillStyle="#fff2c0"; ctx.beginPath(); ctx.arc(sx,sy,R,0,7); ctx.fill(); }
+function drawCloud(c){ const x=c.x*W, y=c.y*H, s=c.s*40*DPR; ctx.fillStyle="rgba(255,255,255,.85)"; for(const[dx,dy,r] of [[0,0,1],[0.8,0.1,0.8],[-0.8,0.12,0.75],[0.3,-0.3,0.7]]){ ctx.beginPath(); ctx.arc(x+dx*s,y+dy*s,r*s,0,7); ctx.fill(); } }
+function drawIsle(is){ const lift=(hover===is)?-10*DPR:0; const x=is.x, y=is.y+lift, r=is.rad;
+  ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(is.x,is.y+r*0.5,r*1.05,r*0.42,0,0,7); ctx.fill();
+  ctx.fillStyle="#f3dca0"; ctx.beginPath(); ctx.ellipse(x,y+r*0.35,r*1.05,r*0.52,0,0,7); ctx.fill();
+  const g=ctx.createLinearGradient(x,y-r*0.6,x,y+r*0.5); g.addColorStop(0, shade(is.c,30)); g.addColorStop(1, is.c);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y+r*0.15,r*0.9,r*0.42,0,0,7); ctx.fill();
+  ctx.fillStyle=shade(is.c,18); ctx.beginPath(); ctx.ellipse(x,y-r*0.05,r*0.5,r*0.3,0,0,7); ctx.fill();
+  landmark(is.icon, x, y-r*0.15, r*0.5, is.c);
+  ctx.font=`700 ${Math.max(13,r*0.19)}px Segoe UI, sans-serif`; ctx.textAlign="center";
+  ctx.fillStyle="rgba(0,0,0,.4)"; ctx.fillText(is.name, x, y+r*0.75+2*DPR); ctx.fillStyle="#fff"; ctx.fillText(is.name, x, y+r*0.75);
+  ctx.font=`700 ${Math.max(10,r*0.13)}px Segoe UI, sans-serif`; ctx.fillStyle="rgba(255,255,255,.8)"; ctx.fillText(is.u, x, y+r*0.75 - r*0.22); }
+function landmark(kind,x,y,s,c){ ctx.save(); ctx.translate(x,y); ctx.strokeStyle="#0b2a44"; ctx.lineWidth=2*DPR; ctx.fillStyle="#fff";
+  if(kind==="flag"){ ctx.fillStyle="#6b4a2a"; ctx.fillRect(-s*0.04,-s*0.6,s*0.08,s*0.9); ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(s*0.04,-s*0.6); ctx.lineTo(s*0.5,-s*0.45); ctx.lineTo(s*0.04,-s*0.28); ctx.fill(); }
+  else if(kind==="eye"){ ctx.fillStyle="#fff"; ctx.beginPath(); ctx.ellipse(0,-s*0.2,s*0.45,s*0.28,0,0,7); ctx.fill(); ctx.fillStyle=c; ctx.beginPath(); ctx.arc(0,-s*0.2,s*0.15,0,7); ctx.fill(); ctx.fillStyle="#0b2a44"; ctx.beginPath(); ctx.arc(0,-s*0.2,s*0.07,0,7); ctx.fill(); }
+  else if(kind==="hammer"){ ctx.strokeStyle="#6b4a2a"; ctx.lineWidth=s*0.12; ctx.beginPath(); ctx.moveTo(-s*0.1,-s*0.4); ctx.lineTo(s*0.2,-s*0.05); ctx.stroke(); ctx.fillStyle="#9fb0c4"; ctx.save(); ctx.translate(-s*0.1,-s*0.4); ctx.rotate(-0.7); ctx.fillRect(-s*0.22,-s*0.12,s*0.44,s*0.24); ctx.restore(); }
+  else if(kind==="chip"){ ctx.fillStyle="#1b2b4a"; ctx.fillRect(-s*0.3,-s*0.5,s*0.6,s*0.6); ctx.strokeStyle=c; ctx.lineWidth=2*DPR; ctx.strokeRect(-s*0.18,-s*0.38,s*0.36,s*0.36); for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*s*0.12,-s*0.5); ctx.lineTo(i*s*0.12,-s*0.6); ctx.stroke(); } }
+  else if(kind==="bot"){ ctx.fillStyle="#cdd8ee"; ctx.fillRect(-s*0.3,-s*0.45,s*0.6,s*0.5); ctx.fillStyle=c; ctx.beginPath(); ctx.arc(-s*0.12,-s*0.2,s*0.07,0,7); ctx.arc(s*0.12,-s*0.2,s*0.07,0,7); ctx.fill(); ctx.strokeStyle="#cdd8ee"; ctx.beginPath(); ctx.moveTo(0,-s*0.45); ctx.lineTo(0,-s*0.6); ctx.stroke(); ctx.fillStyle="#cdd8ee"; ctx.beginPath(); ctx.arc(0,-s*0.63,s*0.05,0,7); ctx.fill(); }
+  else if(kind==="star"){ ctx.fillStyle=c; ctx.beginPath(); for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?s*0.18:s*0.42; const px=Math.cos(a)*rr, py=-s*0.2+Math.sin(a)*rr; i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); ctx.fill(); }
+  ctx.restore(); }
+function shade(hex,amt){ const n=parseInt(hex.slice(1),16); let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt; r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b)); return `rgb(${r},${g},${b})`; }
+function frame(){ t+=0.02; ctx.clearRect(0,0,W,H); waterBg(); sun();
+  for(const c of clouds){ c.x+=c.v*0.004; if(c.x>1.2)c.x=-0.2; drawCloud(c); }
+  [...ISLES].sort((a,b)=>a.y-b.y).forEach(drawIsle); requestAnimationFrame(frame); }
+function hit(mx,my){ for(const is of ISLES){ const dx=(mx-is.x)/(is.rad*0.95), dy=(my-(is.y+is.rad*0.15))/(is.rad*0.5); if(dx*dx+dy*dy<=1) return is; } return null; }
+cv.addEventListener("mousemove",e=>{ const mx=e.clientX*DPR,my=e.clientY*DPR; hover=hit(mx,my); cv.style.cursor=hover?"pointer":"default"; });
+cv.addEventListener("click",e=>{ const is=hit(e.clientX*DPR,e.clientY*DPR); if(is) openPanel(is); });
+const panel=document.getElementById("panel");
+function openPanel(is){ document.getElementById("pU").textContent=is.u; document.getElementById("pName").textContent=is.name;
+  const tag=document.getElementById("pTag"); tag.textContent=is.u+" ISLAND"; tag.style.background=is.c; tag.style.color="#06223a";
+  document.getElementById("pTopics").innerHTML=is.topics.map(x=>`<li>${x}</li>`).join("");
+  document.getElementById("pBuilt").innerHTML=is.built.map(x=>`<li>${x}</li>`).join(""); panel.classList.add("open"); }
+document.getElementById("closeBtn").onclick=()=>panel.classList.remove("open");
+resize(); frame();
+</script>
+</body>
+</html>
